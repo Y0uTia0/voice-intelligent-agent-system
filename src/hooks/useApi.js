@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react';
 
+// ⚠️ 推荐使用 src/services/apiClient.js 进行后端数据交互。
+// 本 Hook 可用于通用 fetch 请求或后续删除。
+
 export const useApi = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

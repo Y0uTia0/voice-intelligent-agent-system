@@ -1,4 +1,5 @@
 import React, { createContext, useReducer, useContext, useEffect } from 'react';
+import { login as apiLogin, register as apiRegister } from '../services/apiClient';
 
 const initialState = {
   isAuthenticated: false,
@@ -52,21 +53,21 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // 模拟登录
+  // 登录
   const login = async (username, password) => {
-    // 这里可替换为真实API
-    if (username === 'test' && password === '123456') {
+    try {
+      const data = await apiLogin(username, password);
       dispatch({
         type: ActionTypes.LOGIN_SUCCESS,
         payload: {
-          user: { id: '1', username: 'test' },
-          token: 'mock-token',
-          role: 'user'
+          user: { id: data.user_id, username: data.username },
+          token: data.access_token,
+          role: data.role
         }
       });
       return true;
-    } else {
-      dispatch({ type: ActionTypes.LOGIN_FAILURE, payload: '用户名或密码错误' });
+    } catch (e) {
+      dispatch({ type: ActionTypes.LOGIN_FAILURE, payload: e.message });
       return false;
     }
   };

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import VoiceRecorder from '../components/VoiceRecorder';
 import VoiceConfirmation from '../components/VoiceConfirmation';
 import AppLayout from '../components/Layout/AppLayout.jsx';
+import { interpret, executeTool } from '../services/apiClient';
 
 function MainPage() {
   const {
@@ -30,24 +31,36 @@ function MainPage() {
       return;
     }
     setStage('interpreting');
-    // 模拟意图解析
-    setTimeout(() => {
-      setSessionId('mock-session-1');
-      setConfirmText(`你要执行的操作是：${text}，请确认`);
-      setToolCalls([{ tool_id: 'mock-tool', parameters: { text } }]);
+    try {
+      const data = await interpret(text, sessionId);
+      setSessionId(data.sessionId);
+      setConfirmText(data.confirmText);
+      setToolCalls(data.tool_calls);
       setStage('confirming');
-    }, 1000);
-  }, [isAuthenticated, setError, setStage, setSessionId, setConfirmText, setToolCalls]);
+    } catch (e) {
+      setError(e.message);
+      setStage('idle');
+    }
+  }, [isAuthenticated, setError, setStage, setSessionId, setConfirmText, setToolCalls, sessionId]);
 
   // 处理确认
   const handleConfirm = useCallback(async () => {
     setStage('executing');
-    // 模拟工具执行
-    setTimeout(() => {
-      setResult({ message: '操作已成功执行！' });
+    try {
+      const toolCall = toolCalls && toolCalls[0];
+      if (!toolCall) throw new Error('无可用工具');
+      const resultData = await executeTool({
+        sessionId,
+        toolId: toolCall.tool_id,
+        params: toolCall.parameters
+      });
+      setResult({ message: resultData.data?.tts_message || '操作已成功执行！' });
       setStage('completed');
-    }, 1200);
-  }, [setStage, setResult]);
+    } catch (e) {
+      setError(e.message);
+      setStage('idle');
+    }
+  }, [setStage, setResult, toolCalls, sessionId, setError]);
 
   // 处理取消
   const handleCancel = useCallback(() => {
