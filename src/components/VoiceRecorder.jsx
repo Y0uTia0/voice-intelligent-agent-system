@@ -23,8 +23,20 @@ const VoiceRecorder = ({ onTranscript }) => {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <Button color={isRecording ? 'danger' : 'primary'} onClick={handleRecord} shape="circle" size="large">
-        {isRecording ? <StopOutline /> : <AudioOutline />}
+      <Button
+        onClick={handleRecord}
+        shape="circle"
+        size="large"
+        style={{
+          background: isRecording ? 'var(--error-color)' : 'var(--color-primary)',
+          color: 'var(--text-primary)',
+          border: `2px solid ${isRecording ? 'var(--error-color)' : 'var(--color-primary)'}`,
+          boxShadow: 'var(--shadow-md)',
+          transition: 'background var(--transition-normal) var(--transition-ease), color var(--transition-normal) var(--transition-ease)'
+        }}
+        aria-label={isRecording ? '停止录音' : '开始录音'}
+      >
+        {isRecording ? <StopOutline style={{ color: 'var(--text-primary)' }} /> : <AudioOutline style={{ color: 'var(--text-primary)' }} />}
       </Button>
       <div className="text-gray-600 text-sm min-h-[24px]">{isRecording ? '正在录音...' : transcript}</div>
       {error && <div className="text-red-500 text-xs">{error}</div>}
