@@ -30,5 +30,13 @@ coverage/
 # Windows系统文件
 Thumbs.db
 
+# 文档文件 (不上传到 GitHub)
+1.前端技术规范文档.md
+2.API接口对接文档.md
+3.UI_UX设计规范.md
+4.核心业务流程文档.md
+5.测试要求与验收标准.md
+6.开发环境搭建指南.md
+
 # Others
 *.log 
