@@ -1,0 +1,146 @@
+/* 设计令牌 - 基于设计规范文档 */
+:root {
+  /* 主要颜色 */
+  --color-primary: #4FD1C5;
+  --color-secondary: #38B2AC;
+  --color-accent: #805AD5;
+  
+  /* 背景色 */
+  --bg-primary: #1E1E2F;
+  --bg-secondary: #27293D;
+  --bg-tertiary: #2D3748;
+  
+  /* 文本颜色 */
+  --text-primary: #F8F8F8;
+  --text-secondary: #CBD5E0;
+  --text-muted: #718096;
+  
+  /* 状态颜色 */
+  --error-color: #F56565;
+  --warning-color: #ECC94B;
+  --success-color: #48BB78;
+  --info-color: #4299E1;
+  
+  /* 边框和阴影 */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  
+  /* 间距系统 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  
+  /* 字体系列 */
+  --font-base: 'Inter', sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  
+  /* 字体大小 */
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-base: 1rem;    /* 16px */
+  --text-lg: 1.125rem;  /* 18px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem;  /* 36px */
+  
+  /* 圆角与边框 */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-base: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* 动画与过渡 */
+  --transition-fast: 150ms;
+  --transition-normal: 300ms;
+  --transition-slow: 500ms;
+  --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 浅色主题变量 */
+[data-theme="light"] {
+  --bg-primary: #F7FAFC;
+  --bg-secondary: #EDF2F7;
+  --bg-tertiary: #E2E8F0;
+  --text-primary: #1A202C;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
+  --border-color: rgba(0, 0, 0, 0.1);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 调试工具栏 */
+.debug-toolbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  background-color: var(--bg-secondary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-bottom-left-radius: var(--radius-base);
+  z-index: 1000;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.debug-item {
+  margin: var(--spacing-xs) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.status-active {
+  color: var(--success-color);
+  font-weight: var(--font-semibold);
+}
+
+.status-inactive {
+  color: var(--error-color);
+  font-weight: var(--font-semibold);
+}
+
+.debug-btn {
+  margin-left: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--bg-tertiary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--transition-ease);
+}
+
+.debug-btn:hover {
+  background-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.debug-btn:active {
+  transform: translateY(1px);
+} 

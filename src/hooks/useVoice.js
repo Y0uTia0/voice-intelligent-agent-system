@@ -1,48 +1,90 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export function useVoice() {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState(null);
   const [recognition, setRecognition] = useState(null);
   const [transcript, setTranscript] = useState('');
+  const [isSupported, setIsSupported] = useState(true);
+
+  // 检查浏览器兼容性
+  useEffect(() => {
+    const supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    console.log('Web Speech API支持状态:', supported);
+    setIsSupported(supported);
+    if (!supported) {
+      setError('您的浏览器不支持语音识别功能，请使用Chrome、Edge或Safari');
+    }
+  }, []);
 
   // 开始录音
   const startRecording = useCallback(async () => {
     setError(null);
     setTranscript('');
+    
+    if (!isSupported) {
+      setError('您的浏览器不支持语音识别功能');
+      console.error('浏览器不支持Web Speech API');
+      return;
+    }
+    
     try {
-      if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-        throw new Error('您的浏览器不支持语音识别功能');
-      }
+      console.log('请求麦克风权限...');
+      // 请求麦克风权限
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('麦克风权限已获取');
+      
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
+      
+      console.log('创建语音识别实例');
       recognitionInstance.continuous = false;
       recognitionInstance.interimResults = true;
       recognitionInstance.lang = 'zh-CN';
+      
       recognitionInstance.onresult = (event) => {
+        console.log('收到识别结果:', event.results);
         const result = event.results[0];
         const text = result[0].transcript;
+        console.log('识别文本:', text);
         setTranscript(text);
       };
+      
       recognitionInstance.onerror = (event) => {
+        console.error('语音识别错误:', event);
         setError(`语音识别出错: ${event.error}`);
         setIsRecording(false);
       };
+      
       recognitionInstance.onend = () => {
+        console.log('语音识别结束');
         setIsRecording(false);
       };
+      
+      console.log('开始录音...');
       recognitionInstance.start();
       setRecognition(recognitionInstance);
       setIsRecording(true);
     } catch (err) {
-      setError(`启动语音识别失败: ${err.message}`);
+      console.error('启动语音识别失败:', err);
+      if (err.name === 'NotAllowedError') {
+        setError('获取麦克风权限被拒绝，请允许浏览器访问麦克风');
+      } else {
+        setError(`启动语音识别失败: ${err.message}`);
+      }
     }
-  }, []);
+  }, [isSupported]);
 
   // 停止录音
   const stopRecording = useCallback(() => {
+    console.log('停止录音, 当前识别文本:', transcript);
     if (recognition) {
-      recognition.stop();
+      try {
+        recognition.stop();
+        console.log('语音识别已停止');
+      } catch (err) {
+        console.error('停止录音出错:', err);
+      }
     }
     setIsRecording(false);
     return transcript;
@@ -52,6 +94,7 @@ export function useVoice() {
     isRecording,
     transcript,
     error,
+    isSupported,
     startRecording,
     stopRecording
   };

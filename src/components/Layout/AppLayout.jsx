@@ -1,18 +1,49 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ThemeToggle from '../ThemeToggle.jsx';
 
 const AppLayout = ({ children }) => {
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-300">
-      <header className="w-full px-4 py-3 bg-[var(--bg-secondary)] shadow-md flex items-center justify-between">
-        <span className="text-xl font-bold tracking-wide">语音智能代理系统</span>
-        <ThemeToggle />
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      backgroundColor: '#1E1E2F',
+    }}>
+      <header style={{
+        width: '100%',
+        padding: '12px 16px',
+        backgroundColor: '#27293D',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <span style={{
+          fontSize: '20px',
+          fontWeight: 'bold',
+          letterSpacing: '0.05em',
+          color: 'white'
+        }}>语音智能代理系统</span>
       </header>
-      <main className="flex-1 w-full max-w-2xl mx-auto px-2 py-4">
+      
+      <main style={{
+        flex: 1,
+        width: '100%',
+        maxWidth: '800px',
+        margin: '0 auto',
+        padding: '8px'
+      }}>
         {children}
       </main>
-      <footer className="w-full px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-muted)] text-center text-xs">
+      
+      <footer style={{
+        width: '100%',
+        padding: '8px 16px',
+        backgroundColor: '#27293D',
+        color: '#718096',
+        textAlign: 'center',
+        fontSize: '12px'
+      }}>
         &copy; {new Date().getFullYear()} 智能语音系统 All Rights Reserved.
       </footer>
     </div>

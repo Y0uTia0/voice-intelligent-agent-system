@@ -1,98 +1,106 @@
-import React, { createContext, useReducer, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { login as apiLogin, register as apiRegister } from '../services/apiClient';
 
-const initialState = {
+const initialAuthState = {
   isAuthenticated: false,
   user: null,
-  token: null,
-  role: null,
-  loading: false,
-  error: null
+  loading: true
 };
 
-const ActionTypes = {
-  LOGIN_SUCCESS: 'LOGIN_SUCCESS',
-  LOGIN_FAILURE: 'LOGIN_FAILURE',
-  LOGOUT: 'LOGOUT',
-};
+const AuthContext = createContext(initialAuthState);
 
-function authReducer(state, action) {
-  switch (action.type) {
-    case ActionTypes.LOGIN_SUCCESS:
-      return {
-        ...state,
-        isAuthenticated: true,
-        user: action.payload.user,
-        token: action.payload.token,
-        role: action.payload.role,
-        loading: false,
-        error: null
-      };
-    case ActionTypes.LOGIN_FAILURE:
-      return {
-        ...state,
+export const AuthProvider = ({ children }) => {
+  const [authState, setAuthState] = useState(initialAuthState);
+
+  // 从本地存储加载认证状态
+  useEffect(() => {
+    console.log('AuthProvider: 从localStorage加载认证状态');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      const username = localStorage.getItem('username');
+      const userRole = localStorage.getItem('user_role');
+
+      console.log('AuthProvider: 找到token?', !!token);
+      
+      if (token) {
+        setAuthState({
+          isAuthenticated: true,
+          user: {
+            id: userId,
+            username: username || 'testuser',
+            role: userRole || 'user'
+          },
+          loading: false
+        });
+        console.log('AuthProvider: 设置认证状态为已登录');
+      } else {
+        setAuthState({
+          isAuthenticated: false,
+          user: null,
+          loading: false
+        });
+        console.log('AuthProvider: 设置认证状态为未登录');
+      }
+    } catch (error) {
+      console.error('AuthProvider: 加载认证状态出错', error);
+      setAuthState({
         isAuthenticated: false,
         user: null,
-        token: null,
-        role: null,
-        loading: false,
-        error: action.payload
-      };
-    case ActionTypes.LOGOUT:
-      return {
-        ...initialState,
         loading: false
-      };
-    default:
-      return state;
-  }
-}
-
-const AuthContext = createContext();
-
-export function AuthProvider({ children }) {
-  const [state, dispatch] = useReducer(authReducer, initialState);
+      });
+    }
+  }, []);
 
   // 登录
-  const login = async (username, password) => {
-    try {
-      const data = await apiLogin(username, password);
-      dispatch({
-        type: ActionTypes.LOGIN_SUCCESS,
-        payload: {
-          user: { id: data.user_id, username: data.username },
-          token: data.access_token,
-          role: data.role
-        }
-      });
-      return true;
-    } catch (e) {
-      dispatch({ type: ActionTypes.LOGIN_FAILURE, payload: e.message });
-      return false;
-    }
+  const login = async (userData) => {
+    console.log('AuthProvider: 登录', userData);
+    // 保存数据到本地存储
+    localStorage.setItem('auth_token', userData.access_token);
+    localStorage.setItem('user_id', userData.user_id);
+    localStorage.setItem('username', userData.username);
+    localStorage.setItem('user_role', userData.role);
+
+    setAuthState({
+      isAuthenticated: true,
+      user: {
+        id: userData.user_id,
+        username: userData.username,
+        role: userData.role
+      },
+      loading: false
+    });
+    return true;
   };
 
+  // 登出
   const logout = () => {
-    dispatch({ type: ActionTypes.LOGOUT });
+    console.log('AuthProvider: 登出');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user_role');
+
+    setAuthState({
+      isAuthenticated: false,
+      user: null,
+      loading: false
+    });
   };
 
-  const value = {
-    ...state,
+  const authContextValue = {
+    ...authState,
     login,
     logout
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 } 

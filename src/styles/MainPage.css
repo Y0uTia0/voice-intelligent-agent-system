@@ -1,0 +1,350 @@
+/* 主题变量 */
+:root {
+  /* 亮色主题默认变量 */
+  --bg-color: #f5f7fa;
+  --main-bg-color: #ffffff;
+  --text-color: #333333;
+  --highlight-color: #0f3460;
+  --accent-color: #e94560;
+  --secondary-bg: #edf2f7;
+  --border-color: #d1d9e6;
+  --success-color: #4ecca3;
+  --error-color: #e74c3c;
+  --warning-color: #f39c12;
+  --info-color: #3498db;
+  --button-hover: #1a4b8c;
+  --debug-bg: #f1f5f9;
+  --log-bg: #edf2f7;
+}
+
+/* 暗色主题变量 */
+[data-theme="dark"] {
+  --bg-color: #0f172a;
+  --main-bg-color: #1a1a2e;
+  --text-color: #f1f1f1;
+  --highlight-color: #7cb4ff;
+  --accent-color: #ff6b8b;
+  --secondary-bg: #1e293b;
+  --border-color: #334155;
+  --success-color: #4ecca3;
+  --error-color: #ff6b6b;
+  --warning-color: #ffd54f;
+  --info-color: #7cb4ff;
+  --button-hover: #4870a9;
+  --debug-bg: #0a0a23;
+  --log-bg: #111827;
+}
+
+/* 基础样式 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.main-container {
+  max-width: 1000px;
+  width: 90%;
+  margin: var(--spacing-xl) auto var(--spacing-md);
+  padding: var(--spacing-lg);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+}
+
+/* 标题和主题切换按钮 */
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+h1 {
+  text-align: center;
+  color: var(--color-primary);
+  margin-bottom: 0;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+}
+
+.theme-toggle-btn {
+  background-color: transparent;
+  border: none;
+  font-size: var(--text-2xl);
+  cursor: pointer;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-full);
+  transition: background-color var(--transition-normal) var(--transition-ease);
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.status-info {
+  background-color: var(--bg-tertiary);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+.highlight {
+  color: var(--color-accent);
+  font-weight: var(--font-semibold);
+}
+
+.error-message {
+  background-color: rgba(245, 101, 101, 0.2);
+  color: var(--error-color);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+  font-size: var(--text-base);
+}
+
+.voice-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.record-btn {
+  background-color: var(--color-primary);
+  color: var(--text-primary);
+  border: none;
+  width: 120px;
+  height: 120px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xl);
+  cursor: pointer;
+  transition: all var(--transition-normal) var(--transition-ease);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.record-btn:hover {
+  transform: translateY(-2px);
+  background-color: var(--color-secondary);
+  box-shadow: var(--shadow-lg);
+}
+
+.record-btn.active {
+  background-color: var(--error-color);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.7); /* --error-color with opacity */
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(245, 101, 101, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 101, 101, 0);
+  }
+}
+
+.processing, .speaking {
+  margin-top: var(--spacing-md);
+  font-size: var(--text-lg);
+  font-style: italic;
+}
+
+.speaking {
+  color: var(--accent-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 1.5s infinite;
+}
+
+.processing {
+  color: var(--success-color);
+}
+
+.transcript-container,
+.confirm-container,
+.result-container {
+  width: 100%;
+  background-color: var(--bg-tertiary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  margin-top: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.transcript-container h3,
+.confirm-container h3,
+.result-container h3 {
+  color: var(--color-primary);
+  margin-top: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-md);
+}
+
+.transcript-text,
+.confirm-text,
+.result-text {
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  font-size: var(--text-lg);
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.confirm-buttons button {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-lg);
+  transition: background-color var(--transition-normal) var(--transition-ease), 
+              transform var(--transition-fast) var(--transition-ease);
+}
+
+.confirm-buttons button:first-child {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.confirm-buttons button:first-child:hover {
+  background-color: #3da069; /* Darker shade of success color */
+  transform: translateY(-2px);
+}
+
+.confirm-buttons button:last-child {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.confirm-buttons button:last-child:hover {
+  background-color: #e74c3c; /* Darker shade of error color */
+  transform: translateY(-2px);
+}
+
+.confirm-buttons button:active {
+  transform: translateY(1px);
+}
+
+.confirm-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 调试日志面板 */
+.debug-panel {
+  margin-top: var(--spacing-lg);
+  border-top: var(--border-width-thin) solid var(--border-color);
+  padding-top: var(--spacing-md);
+}
+
+.debug-panel h3 {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.log-container {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  border: var(--border-width-thin) solid var(--border-color);
+}
+
+.log-entry {
+  margin-bottom: var(--spacing-xs);
+  line-height: var(--leading-normal);
+}
+
+.log-time {
+  color: var(--text-muted);
+  margin-right: var(--spacing-xs);
+}
+
+.log-entry.info .log-message {
+  color: var(--info-color);
+}
+
+.log-entry.error .log-message {
+  color: var(--error-color);
+}
+
+.log-entry.warning .log-message {
+  color: var(--warning-color);
+}
+
+.log-entry.success .log-message {
+  color: var(--success-color);
+}
+
+.log-entry.system .log-message {
+  color: var(--color-accent);
+}
+
+.log-entry.api .log-message {
+  color: var(--color-secondary);
+}
+
+.speaking:before {
+  content: '🔊';
+  margin-right: var(--spacing-xs);
+}
+
+.speak-btn {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--color-secondary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast) var(--transition-ease);
+}
+
+.speak-btn:hover {
+  background-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.speak-btn:active {
+  transform: translateY(1px);
+}
+
+.speak-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.speak-btn:before {
+  content: '🔊';
+  margin-right: var(--spacing-xs);
+} 
