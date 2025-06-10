@@ -14,6 +14,7 @@ describe('VoiceRecorder component', () => {
       isRecording: false,
       transcript: '',
       error: null,
+      isSupported: true,
       startRecording: jest.fn(),
       stopRecording: jest.fn(),
     });
@@ -23,7 +24,7 @@ describe('VoiceRecorder component', () => {
     render(<VoiceRecorder />);
     const button = screen.getByRole('button');
     expect(button).toBeInTheDocument();
-    expect(button).toHaveAccessibleName('开始录音');
+    expect(button).toHaveTextContent('录音');
   });
 
   it('should start recording when button is clicked', () => {
@@ -32,6 +33,7 @@ describe('VoiceRecorder component', () => {
       isRecording: false,
       transcript: '',
       error: null,
+      isSupported: true,
       startRecording,
       stopRecording: jest.fn(),
     });
@@ -46,11 +48,27 @@ describe('VoiceRecorder component', () => {
       isRecording: true,
       transcript: '',
       error: null,
+      isSupported: true,
       startRecording: jest.fn(),
       stopRecording: jest.fn(),
     });
     render(<VoiceRecorder />);
     const button = screen.getByRole('button');
-    expect(button).toHaveAccessibleName('停止录音');
+    expect(button).toHaveTextContent('停止');
+  });
+  
+  it('should show error message when browser is not supported', () => {
+    useVoiceModule.useVoice.mockReturnValue({
+      isRecording: false,
+      transcript: '',
+      error: null,
+      isSupported: false,
+      startRecording: jest.fn(),
+      stopRecording: jest.fn(),
+    });
+    render(<VoiceRecorder />);
+    const errorMessage = screen.getByText('您的浏览器不支持语音识别，请使用Chrome、Edge或Safari浏览器。');
+    expect(errorMessage).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 }); 

@@ -3,12 +3,27 @@ import { useVoice } from '../useVoice';
 
 describe('useVoice hook', () => {
   beforeAll(() => {
+    // 模拟 navigator.mediaDevices
+    global.navigator.mediaDevices = {
+      getUserMedia: jest.fn().mockImplementation(() => Promise.resolve('mockStream'))
+    };
+    
     // 模拟 SpeechRecognition
     global.SpeechRecognition = jest.fn().mockImplementation(() => ({
-      start: jest.fn(),
+      start: jest.fn().mockImplementation(() => {
+        // 立即触发 onresult 事件模拟录音
+        setTimeout(() => {
+          const instance = global.SpeechRecognition.mock.instances[0];
+          if (instance.onresult) {
+            instance.onresult({
+              results: [
+                [{ transcript: '测试录音文本' }]
+              ]
+            });
+          }
+        }, 10);
+      }),
       stop: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
       continuous: false,
       interimResults: true,
       lang: '',
@@ -17,6 +32,9 @@ describe('useVoice hook', () => {
       onend: null,
     }));
     global.webkitSpeechRecognition = global.SpeechRecognition;
+    
+    // 设置测试环境标识
+    process.env.NODE_ENV = 'test';
   });
 
   it('should initialize with default values', () => {
