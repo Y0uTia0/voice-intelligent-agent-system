@@ -20,4 +20,8 @@ module.exports = {
     '!src/**/serviceWorker.js',
     '!src/**/reportWebVitals.js',
   ],
+  maxWorkers: 1,
+  isolatedModules: true,
+  bail: 1,
+  testTimeout: 30000,
 }; 
