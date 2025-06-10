@@ -10,11 +10,17 @@ const checkSpeechSupport = () => {
 
 // 获取媒体设备接口
 const getMediaDevices = () => {
-  // 在测试环境中返回模拟对象
+  // 在测试环境中模拟 mediaDevices
   if (process.env.NODE_ENV === 'test') {
+    // 确保在没有全局 navigator.mediaDevices 的情况下提供模拟
     return {
       getUserMedia: () => Promise.resolve('mockStream')
     };
+  }
+  
+  // 检查浏览器是否支持 mediaDevices
+  if (!navigator.mediaDevices) {
+    throw new Error('浏览器不支持 mediaDevices API');
   }
   
   return navigator.mediaDevices;
@@ -51,7 +57,8 @@ export function useVoice() {
     try {
       console.log('请求麦克风权限...');
       // 请求麦克风权限
-      await getMediaDevices().getUserMedia({ audio: true });
+      const mediaDevices = getMediaDevices();
+      await mediaDevices.getUserMedia({ audio: true });
       console.log('麦克风权限已获取');
       
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;

@@ -3,18 +3,23 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import VoiceRecorder from './VoiceRecorder';
 import * as useVoiceModule from '../hooks/useVoice';
 
+// 完全模拟 useVoice hook
 jest.mock('../hooks/useVoice', () => ({
   __esModule: true,
   useVoice: jest.fn(),
 }));
 
 describe('VoiceRecorder component', () => {
+  // 在每个测试前重置模拟
   beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // 默认返回支持语音识别的状态
     useVoiceModule.useVoice.mockReturnValue({
       isRecording: false,
       transcript: '',
       error: null,
-      isSupported: true,
+      isSupported: true, // 确保默认为 true
       startRecording: jest.fn(),
       stopRecording: jest.fn(),
     });
@@ -58,11 +63,12 @@ describe('VoiceRecorder component', () => {
   });
   
   it('should show error message when browser is not supported', () => {
+    // 测试不支持的情况
     useVoiceModule.useVoice.mockReturnValue({
       isRecording: false,
       transcript: '',
       error: null,
-      isSupported: false,
+      isSupported: false, // 模拟不支持
       startRecording: jest.fn(),
       stopRecording: jest.fn(),
     });
