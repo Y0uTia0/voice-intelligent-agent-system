@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { interpret, executeTool, getUserId } from '../services/apiClient';
 import '../styles/MainPage.css';
 import ThemeToggle from '../components/ThemeToggle';
@@ -42,7 +42,7 @@ const speakText = (text) => {
 const MainPage = () => {
   // 使用认证和主题上下文
   const { isAuthenticated } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   
   // 语音识别状态
   const [recognition, setRecognition] = useState(null);
@@ -57,6 +57,15 @@ const MainPage = () => {
   
   // 保存当前会话信息
   const [currentSession, setCurrentSession] = useState(null);
+  
+  // 计算当前主题的显示文本
+  const themeText = theme === 'light' ? '亮色' : '暗色';
+  
+  // 监听主题变化的调试代码
+  useEffect(() => {
+    console.log('MainPage: 主题变化了 ->', theme);
+    console.log('MainPage: 显示文字 ->', themeText);
+  }, [theme, themeText]);
   
   // 添加调试日志
   const addLog = (message, type = 'info') => {
@@ -309,7 +318,7 @@ const MainPage = () => {
         <div>用户状态: <span className="highlight">{isAuthenticated ? '已登录' : '未登录'}</span></div>
         <div>用户ID: <span className="highlight">{userId || '未知'}</span></div>
         <div>Web Speech API: <span className="highlight">{!!recognition ? '支持' : '不支持'}</span></div>
-        <div>当前主题: <span className="highlight">{theme === 'light' ? '亮色' : '暗色'}</span></div>
+        <div>当前主题: <span className="highlight">{themeText}</span></div>
       </div>
       
       {error && <div className="error-message">{error}</div>}
