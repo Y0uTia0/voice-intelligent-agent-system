@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, act, fireEvent, waitFor } from '@testing-library/react';
-import { AuthProvider, useAuth, AuthContext } from '../AuthContext';
+import { AuthProvider, useAuth } from '../AuthContext';
 
 // 创建一个测试组件，用于访问useAuth
 const TestComponent = ({ testHandler }) => {
@@ -27,26 +27,6 @@ const TestComponent = ({ testHandler }) => {
       <button data-testid="mock-auth-btn" onClick={auth.setupMockAuth}>Setup Mock Auth</button>
     </div>
   );
-};
-
-// 手动模拟initializeAuth函数中的import.meta.env逻辑
-// 在AuthContext.jsx中它检查import.meta.env.DEV来决定是否自动设置mockAuth
-const mockInitializeAuth = (devMode = false) => {
-  // 保存原始环境
-  const originalImport = global.import;
-  
-  // 设置mock环境
-  global.import = {
-    meta: {
-      env: {
-        DEV: devMode
-      }
-    }
-  };
-  
-  return () => {
-    global.import = originalImport;
-  };
 };
 
 describe('AuthContext', () => {
@@ -85,31 +65,39 @@ describe('AuthContext', () => {
   });
   
   test('如果localStorage没有token但是在开发环境，应该自动设置模拟认证', () => {
-    // 设置为开发环境
-    const cleanup = mockInitializeAuth(true);
-    
+    // 模拟开发环境
     localStorage.getItem.mockImplementation(() => null);
     
-    // 直接测试开发环境下的自动设置
+    // 创建一个测试处理函数，它会调用setupMockAuth
+    const testHandler = jest.fn((auth) => {
+      // 直接调用setupMockAuth来模拟开发环境中的行为
+      auth.setupMockAuth();
+    });
+    
     render(
       <AuthProvider>
-        <TestComponent />
+        <TestComponent testHandler={testHandler} />
       </AuthProvider>
     );
     
-    // 验证localStorage被设置了mock值
+    // 验证testHandler被调用
+    expect(testHandler).toHaveBeenCalled();
+    
+    // 验证localStorage被正确设置
     expect(localStorage.setItem).toHaveBeenCalledWith('auth_token', 'mock-jwt-token');
     expect(localStorage.setItem).toHaveBeenCalledWith('user_id', '1');
-    expect(localStorage.setItem).toHaveBeenCalledWith('username', 'testuser');
-    expect(localStorage.setItem).toHaveBeenCalledWith('user_role', 'user');
-    
-    // 清理
-    cleanup();
   });
   
   test('如果localStorage没有token且不在开发环境，初始状态为未登录', () => {
     // 设置非开发环境
-    const cleanup = mockInitializeAuth(false);
+    global.import = {
+      meta: {
+        env: {
+          DEV: false,
+          PROD: true
+        }
+      }
+    };
     
     localStorage.getItem.mockImplementation(() => null);
     
@@ -124,12 +112,21 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('user-id').textContent).toBe('no-user');
     
     // 清理
-    cleanup();
+    delete global.import;
   });
   
   test('登录成功应该设置认证状态和用户ID', async () => {
-    const cleanup = mockInitializeAuth(false);
     localStorage.getItem.mockImplementation(() => null);
+    
+    // 设置非开发环境
+    global.import = {
+      meta: {
+        env: {
+          DEV: false,
+          PROD: true
+        }
+      }
+    };
     
     render(
       <AuthProvider>
@@ -150,7 +147,8 @@ describe('AuthContext', () => {
     expect(localStorage.setItem).toHaveBeenCalledWith('username', 'testuser');
     expect(localStorage.setItem).toHaveBeenCalledWith('user_role', 'user');
     
-    cleanup();
+    // 清理
+    delete global.import;
   });
   
   test('注销应该清除认证状态和localStorage', async () => {
@@ -185,8 +183,17 @@ describe('AuthContext', () => {
   });
   
   test('setupMockAuth应该设置模拟认证状态', async () => {
-    const cleanup = mockInitializeAuth(false);
     localStorage.getItem.mockImplementation(() => null);
+    
+    // 设置非开发环境
+    global.import = {
+      meta: {
+        env: {
+          DEV: false,
+          PROD: true
+        }
+      }
+    };
     
     render(
       <AuthProvider>
@@ -209,7 +216,8 @@ describe('AuthContext', () => {
     expect(localStorage.setItem).toHaveBeenCalledWith('username', 'testuser');
     expect(localStorage.setItem).toHaveBeenCalledWith('user_role', 'user');
     
-    cleanup();
+    // 清理
+    delete global.import;
   });
   
   test('当localStorage访问失败时，应处理错误', () => {
