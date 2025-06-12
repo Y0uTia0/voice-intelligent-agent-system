@@ -66,6 +66,33 @@ body {
   margin-bottom: var(--spacing-xl);
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.main-nav {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-link {
+  padding: 8px 16px;
+  background-color: var(--accent-color);
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: var(--button-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 h1 {
   text-align: center;
   color: var(--color-primary);

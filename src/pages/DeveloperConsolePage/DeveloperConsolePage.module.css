@@ -1,0 +1,68 @@
+.form-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: var(--radius-base);
+  background-color: var(--bg-secondary);
+}
+
+.tool-item {
+  border-radius: var(--radius-base);
+  background-color: var(--bg-secondary);
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.json-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.error-text {
+  color: var(--error-color);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: white;
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+.tag-http {
+  background-color: var(--color-primary);
+}
+
+.tag-mcp {
+  background-color: var(--color-accent);
+}
+
+.tag-custom {
+  background-color: var(--info-color);
+}
+
+.back-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.back-link:hover {
+  background-color: var(--button-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+} 

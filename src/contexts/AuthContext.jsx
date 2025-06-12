@@ -1,131 +1,218 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { login as apiLogin, register as apiRegister } from '../services/apiClient';
-import { isDev } from '../utils/env';
+import React, { createContext, useReducer, useContext, useEffect } from 'react';
 
-// 创建认证上下文
-const AuthContext = createContext({
+// 初始状态
+const initialState = {
   isAuthenticated: false,
-  userId: null,
+  user: null,
+  token: null,
+  role: null,
   loading: true,
-  error: null,
-  login: () => {},
-  logout: () => {},
-  setupMockAuth: () => {}
-});
+  error: null
+};
 
-export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// 动作类型
+const ActionTypes = {
+  LOGIN_REQUEST: 'LOGIN_REQUEST',
+  LOGIN_SUCCESS: 'LOGIN_SUCCESS',
+  LOGIN_FAILURE: 'LOGIN_FAILURE',
+  LOGOUT: 'LOGOUT',
+  REFRESH_TOKEN: 'REFRESH_TOKEN'
+};
 
-  // 从本地存储加载认证状态
+// Reducer 函数
+function authReducer(state, action) {
+  switch (action.type) {
+    case ActionTypes.LOGIN_REQUEST:
+      return { ...state, loading: true, error: null };
+    case ActionTypes.LOGIN_SUCCESS:
+      return {
+        ...state,
+        isAuthenticated: true,
+        user: action.payload.user,
+        token: action.payload.token,
+        role: action.payload.role,
+        loading: false,
+        error: null
+      };
+    case ActionTypes.LOGIN_FAILURE:
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        role: null,
+        loading: false,
+        error: action.payload
+      };
+    case ActionTypes.LOGOUT:
+      return {
+        ...initialState,
+        loading: false
+      };
+    case ActionTypes.REFRESH_TOKEN:
+      return {
+        ...state,
+        token: action.payload
+      };
+    default:
+      return state;
+  }
+}
+
+// 创建上下文
+const AuthContext = createContext();
+
+// 认证提供者组件
+export function AuthProvider({ children }) {
+  const [state, dispatch] = useReducer(authReducer, initialState);
+  
+  // 从 localStorage 恢复认证状态
   useEffect(() => {
-    const initializeAuth = () => {
-      try {
-    console.log('AuthProvider: 从localStorage加载认证状态');
-      const token = localStorage.getItem('auth_token');
-        const storedUserId = localStorage.getItem('user_id');
-
-      console.log('AuthProvider: 找到token?', !!token);
-      
-      if (token) {
-          setIsAuthenticated(true);
-          setUserId(storedUserId);
-        } else {
-          // 开发环境下自动使用模拟认证
-          if (isDev()) {
-            console.log('AuthProvider: 开发环境，设置模拟认证');
-            setupMockAuth();
-      } else {
-            setIsAuthenticated(false);
-            setUserId(null);
-          }
-      }
-    } catch (error) {
-      console.error('AuthProvider: 加载认证状态出错', error);
-        setError('加载认证状态出错');
-      } finally {
-        setLoading(false);
-    }
-    };
+    const token = localStorage.getItem('auth_token');
+    const userId = localStorage.getItem('user_id');
+    const username = localStorage.getItem('username');
+    const role = localStorage.getItem('user_role');
     
-    initializeAuth();
+    if (token && userId && username) {
+      dispatch({
+        type: ActionTypes.LOGIN_SUCCESS,
+        payload: {
+          token,
+          user: { id: userId, username },
+          role
+        }
+      });
+    } else {
+      dispatch({ type: ActionTypes.LOGOUT });
+    }
   }, []);
-
-  // 模拟认证（开发环境使用）
-  const setupMockAuth = () => {
-    console.log('AuthProvider: 设置模拟认证');
+  
+  // 登录方法
+  const loginUser = async (username, password) => {
+    dispatch({ type: ActionTypes.LOGIN_REQUEST });
     
-    const mockToken = 'mock-jwt-token';
-    const mockUserId = '1';
-    
-    localStorage.setItem('auth_token', mockToken);
-    localStorage.setItem('user_id', mockUserId);
-    localStorage.setItem('username', 'testuser');
-    localStorage.setItem('user_role', 'user');
-    
-    setIsAuthenticated(true);
-    setUserId(mockUserId);
-    
-    console.log('AuthProvider: 模拟认证成功设置');
-  };
-
-  // 登录
-  const login = async (userData) => {
     try {
-      setLoading(true);
-      setError(null);
+      console.log('AuthContext: 尝试登录，用户名:', username);
       
-    console.log('AuthProvider: 登录', userData);
-    // 保存数据到本地存储
-    localStorage.setItem('auth_token', userData.access_token);
-    localStorage.setItem('user_id', userData.user_id);
-    localStorage.setItem('username', userData.username);
-    localStorage.setItem('user_role', userData.role);
-
-      setIsAuthenticated(true);
-      setUserId(userData.user_id);
+      // 创建表单数据
+      const formData = new URLSearchParams();
+      formData.append('username', username);
+      formData.append('password', password);
       
-    return true;
-    } catch (err) {
-      console.error('AuthProvider: 登录失败:', err);
-      setError('登录失败: ' + (err.message || '未知错误'));
-      throw err;
-    } finally {
-      setLoading(false);
+      console.log('AuthContext: 请求体:', formData.toString());
+      console.log('AuthContext: 登录URL:', '/auth/token');
+      
+      const response = await fetch('/auth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        console.error('AuthContext: 登录失败，状态码:', response.status);
+        const errorText = await response.text();
+        console.error('AuthContext: 错误详情:', errorText);
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.detail || '登录失败');
+        } catch (e) {
+          throw new Error(`登录失败: ${response.status}`);
+        }
+      }
+      
+      const data = await response.json();
+      console.log('AuthContext: 登录成功，响应:', data);
+      
+      // 保存认证信息到 localStorage
+      localStorage.setItem('auth_token', data.access_token);
+      localStorage.setItem('user_id', data.user_id);
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('user_role', data.role);
+      
+      dispatch({
+        type: ActionTypes.LOGIN_SUCCESS,
+        payload: {
+          token: data.access_token,
+          user: { id: data.user_id, username: data.username },
+          role: data.role
+        }
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('AuthContext: 登录失败:', error);
+      
+      dispatch({
+        type: ActionTypes.LOGIN_FAILURE,
+        payload: error.message
+      });
+      
+      throw error;
     }
   };
-
-  // 登出
-  const logout = () => {
-    console.log('AuthProvider: 登出');
+  
+  // 刷新令牌方法
+  const refreshUserToken = async () => {
+    try {
+      const response = await fetch('/v1/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('刷新令牌失败');
+      }
+      
+      const data = await response.json();
+      localStorage.setItem('auth_token', data.access_token);
+      
+      dispatch({
+        type: ActionTypes.REFRESH_TOKEN,
+        payload: data.access_token
+      });
+      
+      return data.access_token;
+    } catch (error) {
+      dispatch({ type: ActionTypes.LOGOUT });
+      throw error;
+    }
+  };
+  
+  // 登出方法
+  const logoutUser = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('username');
     localStorage.removeItem('user_role');
-
-    setIsAuthenticated(false);
-    setUserId(null);
+    
+    dispatch({ type: ActionTypes.LOGOUT });
   };
-
-  const contextValue = {
-    isAuthenticated,
-    userId,
-    loading,
-    error,
-    login,
-    logout,
-    setupMockAuth
+  
+  const value = {
+    ...state,
+    login: loginUser,
+    logout: logoutUser,
+    refreshToken: refreshUserToken
   };
-
+  
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
+// 自定义 Hook
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 } 

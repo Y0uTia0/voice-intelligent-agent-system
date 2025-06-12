@@ -69,30 +69,46 @@ export function getUserId() {
   return localStorage.getItem('user_id');
 }
 
-// 登录 - 兼容旧接口
-export async function login(username, password) {
-  console.log('🔐 尝试登录，用户名:', username);
+/**
+ * 登录并获取令牌
+ */
+export const login = async (username, password) => {
+  console.log(`尝试登录，用户名: ${username}`);
+  
+  // 使用 URLSearchParams 创建表单数据
+  const formData = new URLSearchParams();
+  formData.append('username', username);
+  formData.append('password', password);
+  
   try {
-    const response = await apiClient.post('/auth/token', {
-      username,
-      password
+    // 确保日志记录
+    console.log('发送登录请求到:', '/auth/token');
+    console.log('请求体:', formData.toString());
+    
+    // 使用fetch API发送请求
+    const response = await fetch('/auth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData
     });
     
-    // 存储token
-    const { access_token, user_id, role } = response.data;
-    localStorage.setItem('auth_token', access_token);
-    localStorage.setItem('user_id', user_id);
-    localStorage.setItem('user_role', role);
-    localStorage.setItem('username', username);
+    if (!response.ok) {
+      console.error('登录失败，状态码:', response.status);
+      const errorText = await response.text();
+      console.error('错误详情:', errorText);
+      throw new Error(`登录失败: ${response.status}`);
+    }
     
-    console.log('🔐 登录成功, userId:', user_id);
-    
-    return response.data;
+    const data = await response.json();
+    console.log('登录响应:', data);
+    return data;
   } catch (error) {
-    console.error('🔐 登录失败:', error);
+    console.error('登录过程中出现错误:', error);
     throw error;
   }
-}
+};
 
 // 注册 - 兼容旧接口
 export async function register({ username, email, password }) {
@@ -235,6 +251,56 @@ export async function apiRequest(path, options = {}) {
       }
     }
     
+    throw error;
+  }
+}
+
+// ======================= 开发者工具管理API =======================
+
+// 获取开发者工具列表
+export async function getDevTools() {
+  try {
+    const response = await apiClient.get('/dev/tools');
+    console.log('👨‍💻 获取开发者工具列表成功:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('👨‍💻 获取开发者工具列表失败:', error);
+    throw error;
+  }
+}
+
+// 创建新的开发者工具
+export async function createDevTool(toolData) {
+  try {
+    const response = await apiClient.post('/dev/tools', toolData);
+    console.log('👨‍💻 创建开发者工具成功:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('👨‍💻 创建开发者工具失败:', error);
+    throw error;
+  }
+}
+
+// 更新开发者工具
+export async function updateDevTool(toolId, toolData) {
+  try {
+    const response = await apiClient.put(`/dev/tools/${toolId}`, toolData);
+    console.log('👨‍💻 更新开发者工具成功:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('👨‍💻 更新开发者工具失败:', error);
+    throw error;
+  }
+}
+
+// 删除开发者工具
+export async function deleteDevTool(toolId) {
+  try {
+    const response = await apiClient.delete(`/dev/tools/${toolId}`);
+    console.log('👨‍💻 删除开发者工具成功');
+    return response.status === 204;
+  } catch (error) {
+    console.error('👨‍💻 删除开发者工具失败:', error);
     throw error;
   }
 }

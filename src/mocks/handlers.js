@@ -3,18 +3,173 @@ import { http, HttpResponse } from 'msw';
 // 明确记录初始化
 console.log('MSW handlers 正在初始化...');
 
+// 模拟用户数据库
+const mockUsers = {
+  // 普通用户
+  'user': {
+    user_id: '1',
+    username: 'user',
+    password: 'password',
+    role: 'user'
+  },
+  // 开发者用户
+  'developer': {
+    user_id: '2',
+    username: 'developer',
+    password: 'password',
+    role: 'developer'
+  },
+  // 管理员用户
+  'admin': {
+    user_id: '3',
+    username: 'admin',
+    password: 'password',
+    role: 'admin'
+  }
+};
+
+// 在handlers对象前导出用户数据，便于测试
+export const testUsers = mockUsers;
+
 export const handlers = [
-  // 模拟登录API
-  http.post('http://localhost:8000/v1/api/auth/token', async () => {
+  // 模拟登录API - 使用通配符匹配任何auth/token请求
+  http.post('**/auth/token', async ({ request }) => {
     console.log('MSW: 拦截到登录API调用');
-    return HttpResponse.json({
-      access_token: 'mock-jwt-token',
-      token_type: 'bearer',
-      expires_in: 604800,
-      user_id: 1,
-      username: 'testuser',
-      role: 'user'
-    }, { status: 200 });
+    console.log('MSW: 请求类型:', request.headers.get('Content-Type'));
+    console.log('MSW: 请求URL:', request.url);
+    
+    try {
+      // 获取表单数据
+      const formData = await request.formData();
+      const username = formData.get('username');
+      const password = formData.get('password');
+      
+      console.log(`MSW: 尝试登录，用户名: ${username}, 密码: ${password}`);
+      
+      // 检查用户是否存在
+      const user = mockUsers[username];
+      if (user && user.password === password) {
+        // 登录成功
+        console.log(`MSW: 登录成功，用户角色: ${user.role}`);
+        
+        const response = {
+          access_token: `mock-jwt-token-${user.role}`,
+          token_type: 'bearer',
+          expires_in: 604800,
+          user_id: user.user_id,
+          username: user.username,
+          role: user.role
+        };
+        
+        console.log('MSW: 返回登录响应:', response);
+        return HttpResponse.json(response, { status: 200 });
+      } else {
+        // 登录失败
+        console.log('MSW: 登录失败，用户名或密码不正确');
+        return HttpResponse.json({
+          detail: '用户名或密码不正确'
+        }, { status: 401 });
+      }
+    } catch (error) {
+      console.error('MSW: 登录API处理错误', error);
+      
+      // 尝试直接解析JSON以支持不同格式的请求
+      try {
+        const body = await request.json();
+        const username = body.username;
+        const password = body.password;
+        
+        console.log(`MSW: 尝试JSON登录，用户名: ${username}, 密码: ${password}`);
+        
+        const user = mockUsers[username];
+        if (user && user.password === password) {
+          console.log(`MSW: JSON登录成功，用户角色: ${user.role}`);
+          return HttpResponse.json({
+            access_token: `mock-jwt-token-${user.role}`,
+            token_type: 'bearer',
+            expires_in: 604800,
+            user_id: user.user_id,
+            username: user.username,
+            role: user.role
+          }, { status: 200 });
+        } else {
+          console.log('MSW: JSON登录失败，用户名或密码不正确');
+          return HttpResponse.json({
+            detail: '用户名或密码不正确'
+          }, { status: 401 });
+        }
+      } catch (jsonError) {
+        console.error('MSW: 无法解析表单或JSON请求', jsonError);
+        
+        // 最后尝试文本方式解析（用于调试）
+        const text = await request.text();
+        console.log('MSW: 请求体原始内容:', text);
+        
+        // 如果是简单的URL编码形式，尝试手动解析
+        if (text.includes('username=') && text.includes('password=')) {
+          try {
+            const params = new URLSearchParams(text);
+            const username = params.get('username');
+            const password = params.get('password');
+            
+            console.log(`MSW: 尝试手动解析登录，用户名: ${username}, 密码: ${password}`);
+            
+            const user = mockUsers[username];
+            if (user && user.password === password) {
+              console.log(`MSW: 手动解析登录成功，用户角色: ${user.role}`);
+              return HttpResponse.json({
+                access_token: `mock-jwt-token-${user.role}`,
+                token_type: 'bearer',
+                expires_in: 604800,
+                user_id: user.user_id,
+                username: user.username,
+                role: user.role
+              }, { status: 200 });
+            }
+          } catch (e) {
+            console.error('MSW: 手动解析表单失败', e);
+          }
+        }
+        
+        return HttpResponse.json({
+          detail: '登录请求格式错误'
+        }, { status: 400 });
+      }
+    }
+  }),
+  
+  // 模拟注册API
+  http.post('http://localhost:8000/v1/api/auth/register', async ({ request }) => {
+    console.log('MSW: 拦截到注册API调用');
+    
+    try {
+      const body = await request.json();
+      const { username, email, password } = body;
+      
+      console.log(`MSW: 尝试注册，用户名: ${username}, 邮箱: ${email}`);
+      
+      // 检查用户名是否已存在
+      if (mockUsers[username]) {
+        console.log('MSW: 注册失败，用户名已存在');
+        return HttpResponse.json({
+          detail: '用户名已存在'
+        }, { status: 400 });
+      }
+      
+      // 模拟成功注册（但不真正添加到mockUsers中）
+      console.log('MSW: 注册成功');
+      return HttpResponse.json({
+        id: 10,
+        username,
+        email,
+        role: 'user'
+      }, { status: 201 });
+    } catch (error) {
+      console.error('MSW: 注册API处理错误', error);
+      return HttpResponse.json({
+        detail: '注册请求格式错误'
+      }, { status: 400 });
+    }
   }),
   
   // 改进版意图解析API - 根据不同查询返回不同响应
@@ -98,6 +253,79 @@ export const handlers = [
         message: '请求格式无效'
       }, { status: 400 });
     }
+  }),
+  
+  // 模拟开发者工具API
+  http.get('**/dev/tools', ({ request }) => {
+    console.log('MSW: 拦截到获取开发者工具API调用');
+    // 检查授权头
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.includes('mock-jwt-token-developer') && !authHeader.includes('mock-jwt-token-admin')) {
+      return HttpResponse.json({ error: '无权限访问' }, { status: 403 });
+    }
+    
+    return HttpResponse.json({
+      tools: [
+        {
+          tool_id: 'custom-weather',
+          name: '自定义天气服务',
+          type: 'http',
+          description: '开发者创建的天气服务',
+          endpoint: {
+            platform: 'generic',
+            api_key: 'dev-key',
+            app_config: {
+              url: 'https://api.example.com/weather',
+              method: 'GET'
+            }
+          },
+          request_schema: {
+            type: 'object',
+            properties: {
+              city: {type: 'string'}
+            }
+          }
+        }
+      ]
+    }, { status: 200 });
+  }),
+  
+  // 模拟创建开发者工具API
+  http.post('**/dev/tools', async ({ request }) => {
+    console.log('MSW: 拦截到创建开发者工具API调用');
+    
+    // 检查授权头
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.includes('mock-jwt-token-developer') && !authHeader.includes('mock-jwt-token-admin')) {
+      return HttpResponse.json({ error: '无权限访问' }, { status: 403 });
+    }
+    
+    try {
+      const tool = await request.json();
+      console.log('MSW: 创建工具请求体', tool);
+      
+      return HttpResponse.json({
+        ...tool,
+        created_at: new Date().toISOString()
+      }, { status: 201 });
+    } catch (error) {
+      return HttpResponse.json({
+        error: '无效的请求格式'
+      }, { status: 400 });
+    }
+  }),
+  
+  // 模拟删除开发者工具API
+  http.delete('**/dev/tools/*', ({ request }) => {
+    console.log('MSW: 拦截到删除开发者工具API调用');
+    
+    // 检查授权头
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.includes('mock-jwt-token-developer') && !authHeader.includes('mock-jwt-token-admin')) {
+      return HttpResponse.json({ error: '无权限访问' }, { status: 403 });
+    }
+    
+    return new HttpResponse(null, { status: 204 });
   }),
   
   // 模拟工具执行API - 根据不同工具和参数返回不同结果

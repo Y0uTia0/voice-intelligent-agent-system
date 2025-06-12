@@ -1,26 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainPage from './pages/MainPage';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPage from './pages/Auth/LoginPage';
+import RegisterPage from './pages/Auth/RegisterPage';
+import DeveloperConsolePage from './pages/DeveloperConsolePage/DeveloperConsolePage';
+import ProtectedRoute from './components/ProtectedRoute';
 import './styles/App.css';
 
-// 调试工具栏组件
+// 新版调试工具栏组件，与新的AuthContext兼容
 const DebugToolbar = () => {
-  const [isMswActive, setIsMswActive] = useState(false);
-  const { isAuthenticated, logout, setupMockAuth } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
+  const [isMswActive, setIsMswActive] = React.useState(false);
   
   // 检查MSW状态
-  useEffect(() => {
+  React.useEffect(() => {
     const checkMsw = () => {
       const mswStatus = window.msw?.active;
       console.log('App: MSW状态检查:', mswStatus);
       setIsMswActive(!!mswStatus);
-      
-      if (window._checkMswStatus && typeof window._checkMswStatus === 'function') {
-        const detailedStatus = window._checkMswStatus();
-        console.log('App: MSW详细状态:', detailedStatus);
-      }
     };
     
     // 初始检查
@@ -32,15 +31,6 @@ const DebugToolbar = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // 切换登录状态
-  const toggleAuth = () => {
-    if (isAuthenticated) {
-      logout();
-    } else {
-      setupMockAuth();
-    }
-  };
-
   return (
     <div className="debug-toolbar">
       <div className="debug-item">
@@ -50,25 +40,47 @@ const DebugToolbar = () => {
       </div>
       <div className="debug-item">
         认证状态: <span className={isAuthenticated ? 'status-active' : 'status-inactive'}>
-          {isAuthenticated ? '✅ 已登录' : '❌ 未登录'}
+          {isAuthenticated ? `✅ 已登录 (${user?.username || '用户'})` : '❌ 未登录'}
         </span>
-        <button className="debug-btn" onClick={toggleAuth}>
-          {isAuthenticated ? '注销' : '模拟登录'}
-        </button>
+        {isAuthenticated && (
+          <button className="debug-btn" onClick={logout}>
+            注销
+          </button>
+        )}
       </div>
     </div>
   );
 };
+
+// 判断是否为开发环境
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <div className="app">
-          <DebugToolbar />
+          {/* 仅在开发环境显示调试工具栏 */}
+          {isDevelopment && <DebugToolbar />}
           
           <Routes>
-            <Route path="/" element={<MainPage />} />
+            {/* 公开路由 */}
+            <Route path="/auth/login" element={<LoginPage />} />
+            <Route path="/auth/register" element={<RegisterPage />} />
+            
+            {/* 受保护的路由 */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <MainPage />
+              </ProtectedRoute>
+            } />
+            
+            {/* 开发者路由 - 只允许developer或admin角色访问 */}
+            <Route path="/developer" element={
+              <ProtectedRoute allowedRoles={['developer', 'admin']}>
+                <DeveloperConsolePage />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
       </AuthProvider>

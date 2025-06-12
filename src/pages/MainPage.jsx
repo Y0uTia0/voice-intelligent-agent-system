@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { interpret, executeTool, getUserId } from '../services/apiClient';
 import '../styles/MainPage.css';
 import ThemeToggle from '../components/ThemeToggle';
+import { Link } from 'react-router-dom';
 
 // 创建语音识别实例
 const createSpeechRecognition = () => {
@@ -41,7 +42,7 @@ const speakText = (text) => {
 
 const MainPage = () => {
   // 使用认证和主题上下文
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
   const { theme } = useTheme();
   
   // 语音识别状态
@@ -311,7 +312,18 @@ const MainPage = () => {
     <div className="main-container">
       <div className="header-container">
         <h1>智能语音助手</h1>
-        <ThemeToggle />
+        <div className="header-controls">
+          <ThemeToggle />
+          
+          {/* 导航菜单 */}
+          <nav className="main-nav">
+            {(role === 'developer' || role === 'admin') && (
+              <Link to="/developer" className="nav-link">
+                开发者控制台
+              </Link>
+            )}
+          </nav>
+        </div>
       </div>
       
       <div className="status-info">
