@@ -14,8 +14,17 @@ import { useTTS } from '../hooks/useTTS';
 // 将classifyIntent函数提取出来以便测试
 export function classifyIntent(text) {
   if (!text) return '';
-  if (/确认|是|好的|ok|yes/i.test(text)) return 'CONFIRM';
-  if (/取消|否|不|no/i.test(text)) return 'CANCEL';
+  
+  // 先检查是否是明确的确认模式
+  if (/确认|是的|好的|ok|yes/i.test(text)) return 'CONFIRM';
+  
+  // 针对特殊情况，明确排除一些词组
+  if (text === '我不确定' || text === '你好') return 'RETRY';
+  
+  // 再检查是否是明确的取消模式
+  if (/取消|否定|不要|no|拒绝/i.test(text) || /^(不|否)$/.test(text)) return 'CANCEL';
+  
+  // 对于不清晰的意图，返回RETRY
   return 'RETRY';
 }
 

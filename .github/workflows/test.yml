@@ -1,0 +1,44 @@
+name: 前端测试
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: 设置Node.js环境
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: 安装依赖
+      run: npm ci
+    
+    - name: 运行单元测试
+      run: npm test -- --coverage
+    
+    - name: 保存测试覆盖率报告
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage/
+    
+    # 如果需要运行E2E测试，取消下面的注释
+    # - name: 启动开发服务器
+    #   run: npm run dev & npx wait-on http://localhost:3000
+    #   
+    # - name: 运行E2E测试
+    #   run: npm run cy:run
+    #   
+    # - name: 保存E2E测试报告
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: cypress-reports 
