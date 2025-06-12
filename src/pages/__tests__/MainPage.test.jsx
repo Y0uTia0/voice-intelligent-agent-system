@@ -23,6 +23,9 @@ const mockSpeechRecognition = {
   onend: null
 };
 
+// 模拟speakText函数
+const mockSpeakText = jest.fn();
+
 describe('MainPage 组件', () => {
   // 在每个测试前设置模拟
   beforeEach(() => {
@@ -158,5 +161,284 @@ describe('MainPage 组件', () => {
     // 验证确认和取消按钮存在
     expect(screen.getByText('确认')).toBeInTheDocument();
     expect(screen.getByText('取消')).toBeInTheDocument();
+  });
+
+  // 新增测试：测试确认操作功能
+  it('点击确认按钮应执行工具并显示结果', async () => {
+    render(<MainPage />);
+    
+    // 开始录音
+    const recordButton = screen.getByText('录音');
+    fireEvent.click(recordButton);
+    
+    // 模拟语音识别结果
+    const mockResults = [
+      [{ transcript: '打开灯', isFinal: true }]
+    ];
+    const mockEvent = {
+      resultIndex: 0,
+      results: mockResults
+    };
+    
+    // 触发语音识别结果事件
+    act(() => {
+      mockSpeechRecognition.onresult(mockEvent);
+    });
+    
+    // 停止录音
+    const stopButton = screen.getByText('停止');
+    fireEvent.click(stopButton);
+    
+    // 等待确认界面显示
+    await waitFor(() => {
+      expect(screen.getByText('您要执行此操作吗？')).toBeInTheDocument();
+    });
+    
+    // 点击确认按钮
+    const confirmButton = screen.getByText('确认');
+    fireEvent.click(confirmButton);
+    
+    // 验证executeTool被调用
+    await waitFor(() => {
+      expect(apiClient.executeTool).toHaveBeenCalledWith({
+        sessionId: 'session123',
+        toolId: 'test-tool',
+        params: { param1: 'value1' }
+      });
+    });
+    
+    // 验证结果显示
+    expect(await screen.findByText('执行结果:')).toBeInTheDocument();
+    expect(await screen.findByText('操作已成功执行')).toBeInTheDocument();
+    
+    // 验证语音合成被调用
+    expect(global.speechSynthesis.speak).toHaveBeenCalled();
+  });
+
+  // 新增测试：测试取消操作功能
+  it('点击取消按钮应清除确认界面', async () => {
+    render(<MainPage />);
+    
+    // 开始录音
+    const recordButton = screen.getByText('录音');
+    fireEvent.click(recordButton);
+    
+    // 模拟语音识别结果
+    const mockResults = [
+      [{ transcript: '打开灯', isFinal: true }]
+    ];
+    const mockEvent = {
+      resultIndex: 0,
+      results: mockResults
+    };
+    
+    // 触发语音识别结果事件
+    act(() => {
+      mockSpeechRecognition.onresult(mockEvent);
+    });
+    
+    // 停止录音
+    const stopButton = screen.getByText('停止');
+    fireEvent.click(stopButton);
+    
+    // 等待确认界面显示
+    await waitFor(() => {
+      expect(screen.getByText('您要执行此操作吗？')).toBeInTheDocument();
+    });
+    
+    // 点击取消按钮
+    const cancelButton = screen.getByText('取消');
+    fireEvent.click(cancelButton);
+    
+    // 验证确认界面被清除
+    await waitFor(() => {
+      expect(screen.queryByText('您要执行此操作吗？')).not.toBeInTheDocument();
+    });
+    
+    // 验证executeTool未被调用
+    expect(apiClient.executeTool).not.toHaveBeenCalled();
+  });
+
+  // 新增测试：测试语音识别错误处理
+  it('应正确处理语音识别错误', async () => {
+    render(<MainPage />);
+    
+    // 开始录音
+    const recordButton = screen.getByText('录音');
+    fireEvent.click(recordButton);
+    
+    // 模拟语音识别错误
+    act(() => {
+      mockSpeechRecognition.onerror({ error: 'no-speech' });
+    });
+    
+    // 验证错误信息显示
+    await waitFor(() => {
+      expect(screen.getByText('语音识别错误: no-speech')).toBeInTheDocument();
+    });
+    
+    // 验证录音状态被重置
+    expect(screen.getByText('录音')).toBeInTheDocument();
+  });
+
+  // 新增测试：测试意图解析API错误处理
+  it('应正确处理意图解析API错误', async () => {
+    // 模拟API错误
+    apiClient.interpret.mockRejectedValueOnce(new Error('API连接失败'));
+    
+    render(<MainPage />);
+    
+    // 开始录音
+    const recordButton = screen.getByText('录音');
+    fireEvent.click(recordButton);
+    
+    // 模拟语音识别结果
+    const mockResults = [
+      [{ transcript: '打开灯', isFinal: true }]
+    ];
+    const mockEvent = {
+      resultIndex: 0,
+      results: mockResults
+    };
+    
+    // 触发语音识别结果事件
+    act(() => {
+      mockSpeechRecognition.onresult(mockEvent);
+    });
+    
+    // 停止录音
+    const stopButton = screen.getByText('停止');
+    fireEvent.click(stopButton);
+    
+    // 验证错误信息显示
+    await waitFor(() => {
+      expect(screen.getByText('意图解析失败: API连接失败')).toBeInTheDocument();
+    });
+  });
+
+  // 新增测试：测试工具执行API错误处理
+  it('应正确处理工具执行API错误', async () => {
+    // 正常设置意图解析
+    apiClient.interpret.mockResolvedValue({
+      confirmText: '您要执行此操作吗？',
+      sessionId: 'session123',
+      tool_calls: [
+        { 
+          tool_id: 'test-tool',
+          parameters: { param1: 'value1' }
+        }
+      ]
+    });
+    
+    // 模拟工具执行错误
+    apiClient.executeTool.mockRejectedValueOnce(new Error('执行失败'));
+    
+    render(<MainPage />);
+    
+    // 开始录音
+    const recordButton = screen.getByText('录音');
+    fireEvent.click(recordButton);
+    
+    // 模拟语音识别结果
+    const mockResults = [
+      [{ transcript: '打开灯', isFinal: true }]
+    ];
+    const mockEvent = {
+      resultIndex: 0,
+      results: mockResults
+    };
+    
+    // 触发语音识别结果事件
+    act(() => {
+      mockSpeechRecognition.onresult(mockEvent);
+    });
+    
+    // 停止录音
+    const stopButton = screen.getByText('停止');
+    fireEvent.click(stopButton);
+    
+    // 等待确认界面显示
+    await waitFor(() => {
+      expect(screen.getByText('您要执行此操作吗？')).toBeInTheDocument();
+    });
+    
+    // 点击确认按钮
+    const confirmButton = screen.getByText('确认');
+    fireEvent.click(confirmButton);
+    
+    // 验证错误信息显示
+    await waitFor(() => {
+      expect(screen.getByText('工具执行失败: 执行失败')).toBeInTheDocument();
+    });
+  });
+
+  // 修改测试：测试再次播放功能
+  it('点击再次播放按钮应再次播放语音', async () => {
+    // 模拟SpeechSynthesisUtterance的onend回调
+    const mockUtterance = {
+      onend: null,
+      onerror: null,
+      lang: '',
+      rate: 1.0,
+      pitch: 1.0
+    };
+    
+    global.SpeechSynthesisUtterance = jest.fn().mockImplementation(() => mockUtterance);
+    
+    render(<MainPage />);
+    
+    // 开始录音并完成整个流程
+    const recordButton = screen.getByText('录音');
+    fireEvent.click(recordButton);
+    
+    // 模拟语音识别结果
+    act(() => {
+      mockSpeechRecognition.onresult({
+        resultIndex: 0,
+        results: [[{ transcript: '打开灯', isFinal: true }]]
+      });
+    });
+    
+    // 停止录音
+    const stopButton = screen.getByText('停止');
+    fireEvent.click(stopButton);
+    
+    // 等待确认界面显示并点击确认
+    await waitFor(() => {
+      expect(screen.getByText('您要执行此操作吗？')).toBeInTheDocument();
+    });
+    
+    const confirmButton = screen.getByText('确认');
+    fireEvent.click(confirmButton);
+    
+    // 等待结果显示
+    await waitFor(() => {
+      expect(screen.getByText('操作已成功执行')).toBeInTheDocument();
+    });
+    
+    // 等待语音播报完成
+    await waitFor(() => {
+      // 模拟语音播报完成
+      if (mockUtterance.onend) {
+        act(() => {
+          mockUtterance.onend();
+        });
+      }
+      
+      // 等待"正在语音播报..."消失
+      const speakingElements = screen.queryByText('正在语音播报...');
+      return speakingElements === null;
+    }, { timeout: 3000 });
+    
+    // 检查再次播放按钮是否存在并且未禁用
+    const replayButton = screen.getByText('再次播放');
+    expect(replayButton).toBeInTheDocument();
+    expect(replayButton).not.toBeDisabled();
+    
+    // 测试按钮可以点击
+    fireEvent.click(replayButton);
+    
+    // 验证语音合成被调用
+    expect(global.SpeechSynthesisUtterance).toHaveBeenCalledWith('操作已成功执行');
   });
 }); 
