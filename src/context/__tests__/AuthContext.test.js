@@ -90,20 +90,18 @@ describe('AuthContext', () => {
     
     localStorage.getItem.mockImplementation(() => null);
     
-    // 手动模拟setupMockAuth
-    jest.spyOn(AuthContext.Provider, 'value', 'get').mockImplementation(() => ({
-      isAuthenticated: true,
-      userId: '1',
-      setupMockAuth: jest.fn(),
-      logout: jest.fn()
-    }));
+    // 直接测试开发环境下的自动设置
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
     
-    // 我们直接测试AuthContext的初始化逻辑而不是通过render
-    const authContext = new AuthContext.Provider({ value: {} });
-    
-    // 验证setupMockAuth被调用
+    // 验证localStorage被设置了mock值
     expect(localStorage.setItem).toHaveBeenCalledWith('auth_token', 'mock-jwt-token');
     expect(localStorage.setItem).toHaveBeenCalledWith('user_id', '1');
+    expect(localStorage.setItem).toHaveBeenCalledWith('username', 'testuser');
+    expect(localStorage.setItem).toHaveBeenCalledWith('user_role', 'user');
     
     // 清理
     cleanup();
